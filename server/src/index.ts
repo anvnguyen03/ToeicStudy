@@ -3,7 +3,10 @@ import mongoose from 'mongoose'
 import dotenv from 'dotenv'
 import colors from 'colors'
 import bodyParser from 'body-parser'
+
 import registerRoute from './routes/registerRoute'
+import loginRoute from './routes/loginRoute'
+import { login } from 'services/loginService'
 
 dotenv.config()
 
@@ -28,3 +31,4 @@ app.listen(port, () => {
 })
 
 app.use('/api/v1/auth', registerRoute())
+app.use('/api/v1/auth', loginRoute())
