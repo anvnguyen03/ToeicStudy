@@ -3,6 +3,7 @@ import mongoose from 'mongoose'
 import dotenv from 'dotenv'
 import colors from 'colors'
 import bodyParser from 'body-parser'
+import registerRoute from './routes/registerRoute'
 
 dotenv.config()
 
@@ -25,3 +26,5 @@ app.get('/', (req: Request, res: Response) => {
 app.listen(port, () => {
     console.log(colors.blue(`[Server]: Server is running at http://localhost:${port}`))
 })
+
+app.use('/api/v1/auth', registerRoute())

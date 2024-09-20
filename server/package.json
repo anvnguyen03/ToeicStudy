@@ -15,9 +15,11 @@
     "@types/bcrypt-nodejs": "^0.0.31",
     "@types/jsonwebtoken": "^9.0.6",
     "@types/nodemailer": "^6.4.15",
+    "bcrypt-nodejs": "^0.0.3",
     "colors": "^1.4.0",
     "dotenv": "^16.4.5",
-    "express": "^4.21.0"
+    "express": "^4.21.0",
+    "nodemailer": "^6.9.15"
   },
   "devDependencies": {
     "@babel/cli": "^7.25.6",
