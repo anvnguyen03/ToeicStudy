@@ -1,5 +1,5 @@
 import { UserModel } from "../models/user"
-import { sendOTPViaMail } from "../utils/sendOTPViaEmail"
+import { sendEmail } from "../utils/sendEmail"
 import { ApiResponse } from "../dto/response/apiResponse"
 import colors from "colors"
 
@@ -14,7 +14,7 @@ const validatePassword = (password: string): boolean => {
 }
 
 export const registerUser = async (fullName: string, email: string, password: string) => {
-    let response: ApiResponse
+    let response: ApiResponse<any>
     const existingUser = await UserModel.findOne({ email })
 
     if (existingUser) {
@@ -47,7 +47,9 @@ export const registerUser = async (fullName: string, email: string, password: st
     
     try {
         await newUser.save()
-        await sendOTPViaMail(email, otp)  
+        const subject = 'Your OTP for registration.'
+        const message = `Here is your OTP: ${otp}`
+        await sendEmail(email, subject, message)  
 
         response = {
             statusCode: 200,
@@ -57,33 +59,48 @@ export const registerUser = async (fullName: string, email: string, password: st
         }
     } catch (error) {
         console.log(colors.red(`Error while sending email: ${error}`))
+        response = {
+            statusCode: 400,
+            message: 'Can not send Email',
+            data: null,
+            error: error.message
+        }
     }
     return response
 }
 
 export const verifyOTP = async (email: string, otp: string) => {
     const user = await UserModel.findOne({ email });
-    let response: ApiResponse
+    let response: ApiResponse<any>
     if (!user) {
-        response = {
+        return response = {
             statusCode: 400,
             message: 'Can not verify',
             data: null,
             error: 'User not found'
         }
-        return response
     }
 
     // Check if OTP is correct and not expired
     if (user.otp === otp) {
         user.isActivated = true;
         user.otp = undefined;
-        await user.save();
-        response = {
-            statusCode: 200,
-            message: 'Verify success. Account activated',
-            data: null,
-            error: null
+        try {
+            await user.save();
+            response = {
+                statusCode: 200,
+                message: 'Verify success. Account activated',
+                data: null,
+                error: null
+            }   
+        } catch (error) {
+            console.log(colors.red(`Error while saving new user: ${error}`))
+            response = {
+                statusCode: 400,
+                message: 'Can not register',
+                data: null,
+                error: error.message
+            }
         }
     } else {
         response = {
