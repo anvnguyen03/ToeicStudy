@@ -4,7 +4,7 @@ import colors from "colors"
 
 dotenv.config()
 
-export const sendOTPViaMail = async (email: string, otp: string) => {
+export const sendEmail = async (email: string, subject: string, message: string) => {
     const transporter = nodemailer.createTransport({
         service: "gmail",
         auth: {
@@ -16,8 +16,8 @@ export const sendOTPViaMail = async (email: string, otp: string) => {
     const mailOptions = {
         from: process.env.EMAIL_USER,
         to: email,
-        subject: "Here is your OTP for registration",
-        text: `Your OTP: ${otp}`
+        subject: subject,
+        text: message
     }
 
     try {

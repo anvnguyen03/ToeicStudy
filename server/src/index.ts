@@ -6,7 +6,7 @@ import bodyParser from 'body-parser'
 
 import registerRoute from './routes/registerRoute'
 import loginRoute from './routes/loginRoute'
-import { login } from 'services/loginService'
+import forgotPasswordRoute from './routes/forgotPasswordRoute'
 
 dotenv.config()
 
@@ -32,3 +32,4 @@ app.listen(port, () => {
 
 app.use('/api/v1/auth', registerRoute())
 app.use('/api/v1/auth', loginRoute())
+app.use('/api/v1/auth', forgotPasswordRoute())
