@@ -5,6 +5,6 @@ const registerRoute = express.Router()
 
 export default (): express.Router => {
     registerRoute.post('/register', registerController.postRegister)
-    registerRoute.post('/verify-account', registerController.postVerifyAccount)
+    registerRoute.post('/activate-account', registerController.postActivateAccount)
     return registerRoute
 }

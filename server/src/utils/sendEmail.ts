@@ -17,7 +17,7 @@ export const sendEmail = async (email: string, subject: string, message: string)
         from: process.env.EMAIL_USER,
         to: email,
         subject: subject,
-        text: message
+        html: message
     }
 
     try {
