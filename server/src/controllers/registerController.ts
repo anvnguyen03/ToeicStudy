@@ -3,7 +3,7 @@ import { Request, Response } from "express"
 import { ApiResponse } from "../dto/response/apiResponse"
 
 export const postRegister = async (req: Request, res: Response) => {
-    const { fullName, email, password} = req.body
+    const { fullName, email, password } = req.body
 
     try {
         const registerResponse: ApiResponse<any> = await registerService.registerUser(fullName, email, password)
@@ -13,12 +13,12 @@ export const postRegister = async (req: Request, res: Response) => {
     }
 }
 
-export const postVerifyAccount = async (req: Request, res: Response) => {
-    const { email, otp } = req.body
+export const postActivateAccount = async (req: Request, res: Response) => {
+    const { activeToken } = req.body
 
     try {
-        const verifyResponse: ApiResponse<any> = await registerService.verifyOTP(email, otp)
-        res.json(verifyResponse)
+        const activeResponse: ApiResponse<any> = await registerService.activateAccount(activeToken)
+        res.json(activeResponse)
     } catch (error) {
         res.status(500).json({ error: error.message })
     }

@@ -1,11 +1,8 @@
 import { UserModel } from "../models/user"
 import { sendEmail } from "../utils/sendEmail"
 import { ApiResponse } from "../dto/response/apiResponse"
+import jwt, { JwtPayload, TokenExpiredError } from "jsonwebtoken"
 import colors from "colors"
-
-const generateOTP = (): string => {
-    return Math.floor(100000 + Math.random() * 900000).toString()
-}
 
 const validatePassword = (password: string): boolean => {
     // regex for minimum 6 characters, at least 1 letter and 1 number
@@ -37,23 +34,23 @@ export const registerUser = async (fullName: string, email: string, password: st
         return response
     }
 
-    const otp = generateOTP()
     const newUser = new UserModel({
         fullName,
         email,
-        password,
-        otp
+        password
     })
-    
+
     try {
         await newUser.save()
-        const subject = 'Your OTP for registration.'
-        const message = `Here is your OTP: ${otp}`
-        await sendEmail(email, subject, message)  
+        const activationLink = `http://localhost:${process.env.port}/api/v1/auth/activate-account/` + jwt.sign({ id: newUser._id }, process.env.JWT_SECRET, { expiresIn: '5m' })
+        const subject = 'TOEIC Study - Account activation'
+        const message = `<p>Click the following link to activate your account: </p>
+                        <a href="${activationLink}">Active!</a>`
+        await sendEmail(email, subject, message)
 
         response = {
             statusCode: 200,
-            message: 'OTP sent via Email',
+            message: 'Check your email for confirmation',
             data: null,
             error: null
         }
@@ -61,7 +58,7 @@ export const registerUser = async (fullName: string, email: string, password: st
         console.log(colors.red(`Error while sending email: ${error}`))
         response = {
             statusCode: 400,
-            message: 'Can not send Email',
+            message: 'Error while sending mail. Please try again later.',
             data: null,
             error: error.message
         }
@@ -69,47 +66,58 @@ export const registerUser = async (fullName: string, email: string, password: st
     return response
 }
 
-export const verifyOTP = async (email: string, otp: string) => {
-    const user = await UserModel.findOne({ email });
+export const activateAccount = async (activeToken: string) => {
     let response: ApiResponse<any>
-    if (!user) {
-        return response = {
-            statusCode: 400,
-            message: 'Can not verify',
-            data: null,
-            error: 'User not found'
-        }
-    }
 
-    // Check if OTP is correct and not expired
-    if (user.otp === otp) {
-        user.isActivated = true;
-        user.otp = undefined;
-        try {
-            await user.save();
+    try {
+        const decoded = jwt.verify(activeToken, process.env.JWT_SECRET) as JwtPayload
+
+        const userId = decoded.id
+        const user = await UserModel.findById(userId)
+
+        // check legit user
+        if (!user) {
             response = {
-                statusCode: 200,
-                message: 'Verify success. Account activated',
+                statusCode: 404,
+                message: 'Activation process failed',
                 data: null,
-                error: null
-            }   
-        } catch (error) {
-            console.log(colors.red(`Error while saving new user: ${error}`))
-            response = {
-                statusCode: 400,
-                message: 'Can not register',
-                data: null,
-                error: error.message
+                error: 'Account does not exist'
             }
+            return response
         }
-    } else {
+
+        user.isActivated = true
+        await user.save()
         response = {
-            statusCode: 400,
-            message: 'Invalid or expired OTP',
+            statusCode: 200,
+            message: 'Account activated',
             data: null,
             error: null
         }
-    }
+        return response
 
-    return response
-};
+    } catch (error) {
+        // In case of token's expired, create a new token for user
+        if (error instanceof TokenExpiredError) {
+            const decoded = jwt.decode(activeToken) as JwtPayload
+            const userId = decoded.id
+            const user = await UserModel.findById(userId)
+
+            const activationLink = `http://localhost:${process.env.port}/api/v1/auth/activate-account/` + jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '5m' })
+            const subject = 'TOEIC Study - Account activation'
+            const message = `<p>Click the following link to activate your account: </p>
+                        <a href="${activationLink}">Active!</a>`
+            await sendEmail(user.email, subject, message)
+
+            response = {
+                statusCode: 400,
+                message: "Activation link's expired. We've just sent a new active link to your email.",
+                data: null,
+                error: "Token's expired"
+            }
+            return response
+        } else {
+            throw error
+        }
+    }
+}
